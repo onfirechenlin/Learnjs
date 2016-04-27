@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>自定义滚动条</title>
+	<script src="http://libs.baidu.com/jquery/1.9.0/jquery.js"></script>
+	<style>
+		* {
+			margin: 0;
+			padding: 0;
+		}
+		.ui-tab-detail-con {
+			width: 358px;
+			margin: 100px auto;
+		}
+		.ui-tab-detail-bar {
+			width: 356px;
+			height: 30px;
+			border: 1px solid #e0e0e0;
+			border-top: none;
+		}
+		.ui-tab-detail-bar li {
+			float: left;
+			height: 30px;
+		}
+		.ui-scroll-con {
+			float: left;
+			overflow: hidden;
+			width: 343px;
+			height: 286px;
+		}
+		.ui-scroll-bar {
+			float: right;
+			position: relative;
+			width: 15px;
+			height: 286px;
+			background: #0cf;
+		}
+		.ui-scroll-block {
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 15px;
+			height: 40px;
+			background: #0fc;
+		}
+		.ui-tab-detail-list {}
+		.ui-tab-detail-list li {
+			float: left;
+			width: 114px;
+			height: 143px;
+			list-style: none;
+		}
+		.ui-tab-detail-list li:nth-child(odd) {
+			background: #cfc;
+		}
+		.ui-tab-detail-list li:nth-child(even) {
+			background: #ffc;
+		}
+	</style>
+</head>
+<body>
+	<div class="ui-tab-detail-con">
+		<div id="jsScrollWrap" class="ui-scroll-con">
+			<ul id="jsScrollCon" class="ui-tab-detail-list">
+				<li></li>
+				<li></li>
+				<li></li>
+				<li></li>
+				<li></li>
+				<li></li>
+				<li></li>
+				<li></li>
+				<li></li>
+			</ul>
+		</div>
+
+		<div id="jsScrollBar" class="ui-scroll-bar">
+			<span id="jsScrollBlock" class="ui-scroll-block"></span>
+		</div>
+	</div>
+	<script>
+		// 自定义滚动条组件
+		var ScrollBar = (function() {
+			// 默认参数
+			var defaults = {
+				wrap: '',
+				bar: '',
+				block: ''
+			};
+
+			var ScrollBarFn = function() {};
+
+			ScrollBarFn.prototype = {
+				init: function(options) {
+					this.opts = extend(defaults, options);
+					this.wrap = this.opts.wrap;
+					this.bar = this.opts.bar;
+					this.block = this.opts.block;
+
+					this.bind();
+				},
+				bind: function() {
+					var _this = this;
+					this.block.onmousedown = function(e) {
+						_this.dragStart(e);
+					}
+				},
+				dragStart: function(e) {
+					var e = e || window.event,
+						_this = this;
+
+						this.startTop = e.clientY;
+						this.offsetY = this.block.offsetTop;
+
+						document.onmousemove = function(e) {
+							_this.dragMove(e);
+						};
+				},
+				dragMove: function(e) {
+					var e = e || window.event,
+						_this = this;
+
+					e.preventDefault();
+
+					this.nowTop = e.clientY;
+					this.endTop = this.offsetY + this.nowTop - this.startTop;
+					this.maxTop = this.bar.clientHeight - this.block.offsetHeight;
+
+					if(this.endTop <= 0) {
+						this.endTop = 0;
+					}
+					if(this.endTop >= this.maxTop) {
+						this.endTop = this.maxTop;
+					}
+
+					this.block.style.top = this.endTop + 'px';
+					this.wrap.scrollTop = (this.wrap.scrollHeight - this.wrap.clientHeight) * this.endTop / this.maxTop;
+
+					document.onmouseup = function(e) {
+						var e = e || window.event;
+						e.preventDefault();
+						_this.dragEnd();
+					}
+				},
+				dragEnd: function(e) {
+					document.onmousemove = null;
+				}
+			};
+
+			function extend(defaults, options) {
+				var key;
+				for(key in options) {
+					defaults[key] = options[key];
+				}
+				return defaults;
+			};
+
+			return ScrollBarFn;
+		})();
+
+		$(function() {
+			// 详情滚动条
+			var detailScrollBar = new ScrollBar();
+			detailScrollBar.init({
+				wrap: document.getElementById('jsScrollWrap'),
+				bar: document.getElementById('jsScrollBar'),
+				block: document.getElementById('jsScrollBlock')
+			});
+		});
+	</script>
+</body>
+</html>
