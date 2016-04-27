@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>滑动栏</title>
+	<script src="http://libs.baidu.com/jquery/1.9.0/jquery.js"></script>
+	<style>
+		* {
+			margin: 0;
+			padding: 0;
+		}
+		.ui-tab-detail {
+			width: 358px;
+		}
+		.ui-tab-detail-tit {
+			margin: 100px auto;
+			width: 356px;
+			height: 30px;
+			border: 1px solid #e0e0e0;
+			background: #e5e5e5;
+		}
+		.ui-tab-detail-btn {
+			float: left;
+			width: 18px;
+			height: 30px;
+			line-height: 30px;
+			text-align: center;
+			background: #0cf;
+			cursor: pointer;
+		}
+
+		.ui-tab-detail-titcon {
+			float: left;
+			overflow: hidden;
+			width: 320px;
+			height: 30px;
+		}
+		.ui-tab-detail-titcon ul {
+			/*width: 480px;*/
+			height: 30px;
+		}
+		.ui-tab-detail-titcon ul li {
+			float: left;
+			width: 80px;
+			height: 30px;
+			line-height: 30px;
+			text-align: center;
+			list-style: none;
+		}
+		.ui-tab-detail-titcon ul li:nth-child(odd) {
+			background: #cfc;
+		}
+		.ui-tab-detail-titcon ul li:nth-child(even) {
+			background: #fc9;
+		}
+	</style>
+</head>
+<body>
+	<div class="ui-tab-detail-tit clearfix">
+		<span id="jsSlideLeft" class="ui-tab-detail-btn ui-tab-detail-l">&lt;</span>
+		<!-- 标题 -->
+		<div id="jsSlideWrap" class="ui-tab-detail-titcon">
+			<ul id="jsSlideCon" class="clearfix">
+				<li>1</li>
+				<li>2</li>
+				<li>3</li>
+				<li>4</li>
+				<li>5</li>
+				<li>6</li>
+				<li>7</li>
+				<li>8</li>
+				<li>9</li>
+				<li>10</li>
+				<li>11</li>
+				<li>12</li>
+			</ul>
+		</div>
+
+		<span id="jsSlideRight" class="ui-tab-detail-btn ui-tab-detail-r">&gt;</span>
+	</div>
+	<script>
+		// 左右滑动导航条
+		var SlideBar = (function() {
+
+			// 默认参数
+			var defaults = {
+				wrap: '',
+				con: '',
+				leftBtn: '',
+				rightBtn: ''
+			};
+
+			var SlideBarFn = function() {};
+
+			SlideBarFn.prototype = {
+				init: function(options) {
+					this.opts = extend(defaults, options);
+					this.wrap = this.opts.wrap;
+					this.con = this.opts.con;
+					this.rBtn = this.opts.rightBtn;
+					this.lBtn = this.opts.leftBtn;
+					this.timer = null;
+					this.step = 0;
+					this.maxStep = this.con.children.length - 1;
+					this.barConWidth = this.getConWidth();
+					this.itemWidth = this.con.children[0].offsetWidth;
+					this.con.style.width = this.barConWidth + 'px';
+
+					this.bind();
+
+				},
+				bind: function() {
+					var _this = this;
+
+					this.lBtn.onclick = function() {
+						if(_this.timer) {
+							clearInterval(_this.timer);
+						};
+
+						_this.step--;
+						if(_this.step <= 0) {
+							_this.step = 0;
+						};
+
+						_this.startSlide(_this.step * _this.itemWidth);
+					};
+
+					this.rBtn.onclick = function() {
+						if(_this.timer) {
+							clearInterval(_this.timer);
+						};
+
+						_this.step++;
+						if(_this.step >= _this.maxStep) {
+							_this.step = _this.maxStep;
+						};
+
+						_this.startSlide(_this.step * _this.itemWidth);
+					};
+				},
+				startSlide: function(endPosition) {
+					var _this = this;
+					//防止计时器的重复调用
+					if(this.timer) {
+						clearInterval(this.timer);
+					}
+					this.startPos = this.wrap.scrollLeft;	//初始位置
+					this.endPos = endPosition;				//终点位置
+					this.speed = 0;							//声明变量
+
+
+					this.timer = setInterval(function() {
+						//实现缓冲
+						_this.speed = (_this.endPos - _this.startPos) / 15;
+
+						//不确定起始点，速度取整
+						_this.speed = (_this.speed > 0) ? Math.ceil(_this.speed) : Math.floor(_this.speed);
+
+						_this.startPos += _this.speed;
+
+						//贴合
+						// if(Math.abs(_this.endPos - _this.startPos) <= 1) {
+						// 	clearInterval(_this.timer);
+						// 	_this.startPos = _this.endPos;
+						// 	_this.timer = null;
+						// }
+						_this.wrap.scrollLeft = _this.startPos;
+
+					}, 20);
+				},
+				getConWidth: function() {
+					this.childs = this.con.children;
+					this.conWidth = 0;
+
+					for(var i = 0, len = this.childs.length; i < len; i ++) {
+						this.conWidth += this.childs[i].offsetWidth;
+					}
+					return this.conWidth;
+				}
+			};
+
+			function extend(defaults, options) {
+				var key;
+				for(key in options) {
+					defaults[key] = options[key];
+				}
+				return defaults;
+			}
+
+			return SlideBarFn;
+		})();
+
+		$(function() {
+			var detailSlideBar = new SlideBar();
+			detailSlideBar.init({
+				wrap: document.getElementById('jsSlideWrap'),
+				con: document.getElementById('jsSlideCon'),
+				leftBtn: document.getElementById('jsSlideLeft'),
+				rightBtn: document.getElementById('jsSlideRight')
+			});
+		});
+	</script>
+</body>
+</html>
