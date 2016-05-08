@@ -9,6 +9,15 @@
 			margin: 0;
 			padding: 0;
 		}
+		.clearfix:after {
+			content: "\200B";
+			display: block;
+			height: 0;
+			clear: both;
+		}
+		.clearfix {
+			*zoom: 1;
+		}
 		.ui-tab-detail-con {
 			width: 358px;
 			margin: 100px auto;
@@ -32,19 +41,20 @@
 		.ui-scroll-bar {
 			float: right;
 			position: relative;
-			width: 15px;
+			width: 10px;
 			height: 286px;
-			background: #0cf;
+			background: #444;
 		}
-		.ui-scroll-block {
+		.ui-scroll-box {
 			position: absolute;
 			top: 0;
 			left: 0;
-			width: 15px;
-			height: 40px;
-			background: #0fc;
+			width: 10px;
+			background: #e88686;
 		}
-		.ui-tab-detail-list {}
+		.ui-tab-detail-list {
+
+		}
 		.ui-tab-detail-list li {
 			float: left;
 			width: 114px;
@@ -62,7 +72,19 @@
 <body>
 	<div class="ui-tab-detail-con">
 		<div id="jsScrollWrap" class="ui-scroll-con">
-			<ul id="jsScrollCon" class="ui-tab-detail-list">
+			<ul id="jsScrollCon" class="ui-tab-detail-list clearfix">
+				<li></li>
+				<li></li>
+				<li></li>
+				<li></li>
+				<li></li>
+				<li></li>
+				<li></li>
+				<li></li>
+				<li></li>
+				<li></li>
+				<li></li>
+				<li></li>
 				<li></li>
 				<li></li>
 				<li></li>
@@ -76,7 +98,7 @@
 		</div>
 
 		<div id="jsScrollBar" class="ui-scroll-bar">
-			<span id="jsScrollBlock" class="ui-scroll-block"></span>
+			<span id="jsScrollBox" class="ui-scroll-box"></span>
 		</div>
 	</div>
 	<script>
@@ -85,8 +107,9 @@
 			// 默认参数
 			var defaults = {
 				wrap: '',
+				con: '',
 				bar: '',
-				block: ''
+				box: ''
 			};
 
 			var ScrollBarFn = function() {};
@@ -94,24 +117,74 @@
 			ScrollBarFn.prototype = {
 				init: function(options) {
 					this.opts = extend(defaults, options);
-					this.wrap = this.opts.wrap;
-					this.bar = this.opts.bar;
-					this.block = this.opts.block;
+					this.wrap = this.opts.wrap; 	//父容器
+					this.con = this.opts.con; 		//内容
+					this.bar = this.opts.bar; 		//滚动条
+					this.box = this.opts.box; 	//滚动块
+					this.endTop = 0; 				//结束位置
+
+					//容器可视高度与内容页高度比值
+					this.scale = this.wrap.clientHeight / this.con.scrollHeight;
+
+					//滚动块高度
+					this.boxHeight = this.scale * this.bar.scrollHeight;
+
+					//可拖动最大高度值
+					this.boxMaxTop = this.bar.scrollHeight - this.boxHeight;
+
+					// 文档最大可滚动高度
+					this.conMaxTop = this.wrap.clientHeight - this.con.scrollHeight;
+
+					if(this.scale > 1) {
+						this.scale = 1;
+						this.scrollBar.style.display = 'none';
+					};
+
+					this.box.style.height = this.boxHeight + 'px';
 
 					this.bind();
 				},
 				bind: function() {
 					var _this = this;
-					this.block.onmousedown = function(e) {
+					this.box.onmousedown = function(e) {
 						_this.dragStart(e);
-					}
+					};
+
+					var wheelHandler = function(e) {
+						var e = e || window.event,
+							delta = e.wheelDelta || e.detail,
+							scrollDown = true;
+
+						if(e.detail) {
+							scrollDown = delta > 0 ? true : false;
+						} else {
+							scrollDown = delta > 0 ? false : true;
+						}
+
+						if(scrollDown) {
+							_this.endTop += 10;
+						} else {
+							_this.endTop -= 10;
+						}
+						_this.fnScroll();
+
+						if(e.preventDefault) {
+							e.preventDefault();
+						}
+						return false;
+					};
+
+					this.wrap.onmousewheel = wheelHandler;
+					if(this.wrap.addEventListener) {
+						this.wrap.addEventListener('DOMMouseScroll', wheelHandler, false);
+					};
 				},
 				dragStart: function(e) {
 					var e = e || window.event,
 						_this = this;
 
 						this.startTop = e.clientY;
-						this.offsetY = this.block.offsetTop;
+						this.offsetY = this.box.offsetTop;
 
 						document.onmousemove = function(e) {
 							_this.dragMove(e);
@@ -125,17 +198,8 @@
 
 					this.nowTop = e.clientY;
 					this.endTop = this.offsetY + this.nowTop - this.startTop;
-					this.maxTop = this.bar.clientHeight - this.block.offsetHeight;
 
-					if(this.endTop <= 0) {
-						this.endTop = 0;
-					}
-					if(this.endTop >= this.maxTop) {
-						this.endTop = this.maxTop;
-					}
-
-					this.block.style.top = this.endTop + 'px';
-					this.wrap.scrollTop = (this.wrap.scrollHeight - this.wrap.clientHeight) * this.endTop / this.maxTop;
+					this.fnScroll();
 
 					document.onmouseup = function(e) {
 						var e = e || window.event;
@@ -145,6 +209,17 @@
 				},
 				dragEnd: function(e) {
 					document.onmousemove = null;
+				},
+				fnScroll: function() {
+					if(this.endTop <= 0) {
+						this.endTop = 0;
+					}
+					if(this.endTop >= this.boxMaxTop) {
+						this.endTop = this.boxMaxTop;
+					}
+
+					this.box.style.top = this.endTop + 'px';
+					this.wrap.scrollTop = (this.wrap.scrollHeight - this.wrap.clientHeight) * this.endTop / this.boxMaxTop;
 				}
 			};
 
@@ -164,8 +239,9 @@
 			var detailScrollBar = new ScrollBar();
 			detailScrollBar.init({
 				wrap: document.getElementById('jsScrollWrap'),
+				con: document.getElementById('jsScrollCon'),
 				bar: document.getElementById('jsScrollBar'),
-				block: document.getElementById('jsScrollBlock')
+				box: document.getElementById('jsScrollBox')
 			});
 		});
 	</script>
